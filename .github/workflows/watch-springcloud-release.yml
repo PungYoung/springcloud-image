@@ -1,4 +1,4 @@
-name: Build Latest Spring Cloud Gateway 5.0.3 (Oakwood 2025.1.3)
+name: Build Spring Cloud Gateway Docker Image
 run-name: Auto build latest scg image
 
 on:
@@ -14,7 +14,7 @@ permissions:
 env:
   UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
-  IMAGE_NAME: pungyoung/springcloud-image
+  IMAGE_NAME: pungyoung/spring-cloud
 
 jobs:
   build:
@@ -134,18 +134,18 @@ jobs:
           # 生成SpringBoot启动类
           mkdir -p src/main/java/com/example
           cat > src/main/java/com/example/DemoApplication.java <<EOF
-package com.example;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class DemoApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
-}
-EOF
+          package com.example;
+          
+          import org.springframework.boot.SpringApplication;
+          import org.springframework.boot.autoconfigure.SpringBootApplication;
+          
+          @SpringBootApplication
+          public class DemoApplication {
+              public static void main(String[] args) {
+                  SpringApplication.run(DemoApplication.class, args);
+              }
+          }
+          EOF
           cat pom.xml
 
       - name: Setup JDK23
@@ -178,5 +178,5 @@ EOF
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add last_release.txt
-          git commit -m "Auto build SCG 5.0.3 / SpringCloud ${{ steps.get_release.outputs.latest_tag }}"
+          git commit -m "Auto build SpringCloud ${{ steps.get_release.outputs.latest_tag }}"
           git push
