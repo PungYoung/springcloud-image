@@ -1,0 +1,79 @@
+name: Watch SpringCloud Official Release & Build GHCR
+run-name: Watch SpringCloud upstream release
+
+on:
+  schedule:
+    # UTC 每天凌晨2点（北京时间上午10点）扫描一次上游仓库
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  # 你要监听的上游仓库，这里举例 spring-cloud-gateway
+  UPSTREAM_REPO: spring-cloud/spring-cloud-gateway
+  # 你的ghcr镜像地址
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout my repo
+        uses: actions/checkout@v5
+
+      - name: Fetch latest release from spring-cloud repo
+        id: get_release
+        run: |
+          # 调用github api获取最新release tag
+          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/latest | jq -r '.tag_name')
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          echo "Latest upstream tag: ${LATEST_TAG}"
+
+      - name: Read last built version
+        id: read_last
+        run: |
+          if [ -f last_release.txt ]; then
+            LAST=$(cat last_release.txt)
+          else
+            LAST=""
+          fi
+          echo "last=${LAST}" >> $GITHUB_OUTPUT
+
+      - name: Compare version, skip if no new release
+        if: steps.get_release.outputs.latest_tag == steps.read_last.outputs.last
+        run: |
+          echo "No new release, exit"
+          exit 0
+
+      - name: New release detected, update pom version
+        run: |
+          echo ${{ steps.get_release.outputs.latest_tag }} > last_release.txt
+          # 这里可以用mvn versions:set 自动修改pom里面spring-cloud-gateway版本
+          ./mvnw versions:set -DnewVersion=${{ steps.get_release.outputs.latest_tag }} -DprocessAllModules
+
+      - name: Setup JDK21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build jar + Buildpack OCI image
+        run: |
+          ./mvnw clean package -DskipTests
+          ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_release.outputs.latest_tag }}
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to ghcr
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_release.outputs.latest_tag }}
