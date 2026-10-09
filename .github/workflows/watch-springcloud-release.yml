@@ -1,5 +1,5 @@
 name: Auto Build Spring Cloud Gateway (Track Every GA Release)
-run-name: Auto build SCG
+run-name: Auto build SCG 
 
 on:
   schedule:
@@ -136,8 +136,8 @@ jobs:
               </build>
           </project>
           EOF
-                    mkdir -p src/main/java/com/example
-                    cat > src/main/java/com/example/DemoApplication.java <<EOF
+          mkdir -p src/main/java/com/example
+          cat > src/main/java/com/example/DemoApplication.java <<EOF
           package com.example;
           
           import org.springframework.boot.SpringApplication;
@@ -186,8 +186,8 @@ jobs:
       - name: Build & Push Docker Image
         run: |
           IMAGE_TAG=${{ steps.get_release.outputs.latest_tag }}
-          docker build -t ghcr.io/${{ env.IMAGE_NAME }}:\${IMAGE_TAG} .
-          docker push ghcr.io/${{ env.IMAGE_NAME }}:\${IMAGE_TAG}
+          docker build -t ghcr.io/${{ env.IMAGE_NAME }}:${IMAGE_TAG} .
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
 
       # 更新last_release.txt，标记本次版本已构建
       - name: Save built version
