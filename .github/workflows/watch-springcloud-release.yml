@@ -1,5 +1,5 @@
 name: Auto Build Spring Cloud Gateway (Track Every GA Release)
-run-name: Auto build SCG ${{ steps.get_release.outputs.latest_tag || 'pending' }}
+run-name: Auto build SCG
 
 on:
   schedule:
