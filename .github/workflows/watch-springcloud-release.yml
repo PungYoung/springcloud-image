@@ -14,7 +14,7 @@ permissions:
 env:
   UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: pungyoung/springcloud-image
 
 jobs:
   build:
@@ -131,21 +131,21 @@ jobs:
               </build>
           </project>
           EOF
-                    # 生成SpringBoot启动类
-                    mkdir -p src/main/java/com/example
-                    cat > src/main/java/com/example/DemoApplication.java <<EOF
-          package com.example;
-          
-          import org.springframework.boot.SpringApplication;
-          import org.springframework.boot.autoconfigure.SpringBootApplication;
-          
-          @SpringBootApplication
-          public class DemoApplication {
-              public static void main(String[] args) {
-                  SpringApplication.run(DemoApplication.class, args);
-              }
-          }
-          EOF
+          # 生成SpringBoot启动类
+          mkdir -p src/main/java/com/example
+          cat > src/main/java/com/example/DemoApplication.java <<EOF
+package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+EOF
           cat pom.xml
 
       - name: Setup JDK23
