@@ -3,8 +3,7 @@ run-name: Watch SpringCloud upstream release
 
 on:
   schedule:
-    # UTC 每天凌晨2点（北京时间上午10点）扫描一次上游仓库
-    - cron: '0 2 * * *'
+    - cron: '17 16 * * *'
   workflow_dispatch:
 
 permissions:
