@@ -1,8 +1,9 @@
-name: Watch SpringCloud Official Release & Build GHCR
-run-name: Watch SpringCloud upstream release
+name: Dynamic Generate Pom & Build SpringCloud Image
+run-name: Auto build spring cloud image
 
 on:
   schedule:
+    # UTC 08:20 = 北京时间16:20
     - cron: '20 8 * * *'
   workflow_dispatch:
 
@@ -11,26 +12,32 @@ permissions:
   packages: write
 
 env:
-  # 你要监听的上游仓库，这里举例 spring-cloud-gateway
-  UPSTREAM_REPO: spring-cloud/spring-cloud-gateway
-  # 你的ghcr镜像地址
+  UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  check-and-build:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout my repo
+      - name: Checkout repo (only for last_release.txt)
         uses: actions/checkout@v5
 
-      - name: Fetch latest release from spring-cloud repo
+      - name: Fetch Spring Cloud Release Train
         id: get_release
         run: |
-          # 调用github api获取最新release tag
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/latest | jq -r '.tag_name')
+          RESP=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/latest)
+          LATEST_TAG=$(echo "$RESP" | jq -r '.tag_name')
+          IS_PRE=$(echo "$RESP" | jq -r '.prerelease')
           echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
-          echo "Latest upstream tag: ${LATEST_TAG}"
+          echo "is_prerelease=${IS_PRE}" >> $GITHUB_OUTPUT
+          echo "Found Spring Cloud version: ${LATEST_TAG}"
+
+      - name: Skip pre-release version
+        if: steps.get_release.outputs.is_prerelease == 'true'
+        run: |
+          echo "Skip pre-release"
+          exit 0
 
       - name: Read last built version
         id: read_last
@@ -42,17 +49,87 @@ jobs:
           fi
           echo "last=${LAST}" >> $GITHUB_OUTPUT
 
-      - name: Compare version, skip if no new release
+      - name: Skip if same version
         if: steps.get_release.outputs.latest_tag == steps.read_last.outputs.last
         run: |
-          echo "No new release, exit"
+          echo "No new release, skip build"
           exit 0
 
-      - name: New release detected, update pom version
+      # ========== 动态生成 pom.xml 重点 ==========
+      - name: Generate pom.xml dynamically
         run: |
-          echo ${{ steps.get_release.outputs.latest_tag }} > last_release.txt
-          # 这里可以用mvn versions:set 自动修改pom里面spring-cloud-gateway版本
-          mvn versions:set -DnewVersion=${{ steps.get_release.outputs.latest_tag }} -DprocessAllModules
+          cat > pom.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <project xmlns="http://maven.apache.org/POM/4.0.0"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+              <modelVersion>4.0.0</modelVersion>
+          
+              <parent>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-parent</artifactId>
+                  <version>3.2.5</version>
+                  <relativePath/>
+              </parent>
+          
+              <groupId>com.example</groupId>
+              <artifactId>scg-dynamic</artifactId>
+              <version>${{ steps.get_release.outputs.latest_tag }}</version>
+          
+              <properties>
+                  <java.version>21</java.version>
+                  <spring-cloud.version>${{ steps.get_release.outputs.latest_tag }}</spring-cloud.version>
+              </properties>
+          
+              <dependencies>
+                  <!-- Spring Cloud Gateway -->
+                  <dependency>
+                      <groupId>org.springframework.cloud</groupId>
+                      <artifactId>spring-cloud-starter-gateway</artifactId>
+                  </dependency>
+                  <!-- Spring Cloud Kubernetes -->
+                  <dependency>
+                      <groupId>org.springframework.cloud</groupId>
+                      <artifactId>spring-cloud-starter-kubernetes-fabric8</artifactId>
+                  </dependency>
+                  <!-- Spring Cloud Config Client -->
+                  <dependency>
+                      <groupId>org.springframework.cloud</groupId>
+                      <artifactId>spring-cloud-starter-config</artifactId>
+                  </dependency>
+                  <dependency>
+                      <groupId>org.springframework.cloud</groupId>
+                      <artifactId>spring-cloud-starter-bootstrap</artifactId>
+                  </dependency>
+                  <dependency>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-starter-actuator</artifactId>
+                  </dependency>
+              </dependencies>
+          
+              <dependencyManagement>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.springframework.cloud</groupId>
+                          <artifactId>spring-cloud-dependencies</artifactId>
+                          <version>\${spring-cloud.version}</version>
+                          <type>pom</type>
+                          <scope>import</scope>
+                      </dependency>
+                  </dependencies>
+              </dependencyManagement>
+          
+              <build>
+                  <plugins>
+                      <plugin>
+                          <groupId>org.springframework.boot</groupId>
+                          <artifactId>spring-boot-maven-plugin</artifactId>
+                      </plugin>
+                  </plugins>
+              </build>
+          </project>
+          EOF
+          cat pom.xml
 
       - name: Setup JDK21
         uses: actions/setup-java@v4
@@ -61,7 +138,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build jar + Buildpack OCI image
+      - name: Maven package & Buildpack build image
         run: |
           mvn clean package -DskipTests
           mvn spring-boot:build-image -Dspring-boot.build-image.imageName=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_release.outputs.latest_tag }}
@@ -73,6 +150,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push image to ghcr
+      - name: Push image to GHCR
         run: |
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_release.outputs.latest_tag }}
+
+      # 更新last_release.txt，提交回仓库，标记本次已构建版本
+      - name: Save last version to repo
+        run: |
+          echo ${{ steps.get_release.outputs.latest_tag }} > last_release.txt
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add last_release.txt
+          git commit -m "Record built version: ${{ steps.get_release.outputs.latest_tag }}"
+          git push
