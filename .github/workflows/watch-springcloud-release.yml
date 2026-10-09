@@ -1,4 +1,4 @@
-name: Build Spring Cloud Gateway Docker Image
+name: Build Spring Cloud Docker Image
 run-name: Auto build latest scg image
 
 on:
