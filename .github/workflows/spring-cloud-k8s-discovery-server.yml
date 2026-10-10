@@ -73,13 +73,14 @@ jobs:
               <properties>
                   <java.version>23</java.version>
                   <spring-cloud.version>${{ steps.get_release.outputs.latest_tag }}</spring-cloud.version>
+                  <spring-cloud-kubernetes.version>5.0.3</spring-cloud-kubernetes.version>
               </properties>
           
               <dependencies>
-                  <!-- Spring Cloud Kubernetes Discovery Server -->
+                  <!-- Kubernetes Discovery Server，正确artifactId -->
                   <dependency>
                       <groupId>org.springframework.cloud</groupId>
-                      <artifactId>spring-cloud-kubernetes-discovery-server</artifactId>
+                      <artifactId>spring-cloud-kubernetes-discoveryserver</artifactId>
                   </dependency>
                   <dependency>
                       <groupId>org.springframework.boot</groupId>
@@ -93,6 +94,14 @@ jobs:
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
                           <version>${spring-cloud.version}</version>
+                          <type>pom</type>
+                          <scope>import</scope>
+                      </dependency>
+                      <!-- 导入k8s子BOM -->
+                      <dependency>
+                          <groupId>org.springframework.cloud</groupId>
+                          <artifactId>spring-cloud-kubernetes-dependencies</artifactId>
+                          <version>${spring-cloud-kubernetes.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
@@ -110,13 +119,13 @@ jobs:
           </project>
           EOF
           mkdir -p src/main/java/com/example
-          cat > src/main/java/com/example/K8sDiscoveryServerApplication.java <<EOF
+          cat > src/main/java/com/example/K8sDiscoveryServerApplication.java <<'EOF'
           package com.example;
-          
+
           import org.springframework.boot.SpringApplication;
           import org.springframework.boot.autoconfigure.SpringBootApplication;
-          import org.springframework.cloud.kubernetes.discovery.server.EnableKubernetesDiscoveryServer;
-          
+          import org.springframework.cloud.kubernetes.discoveryserver.EnableKubernetesDiscoveryServer;
+
           @EnableKubernetesDiscoveryServer
           @SpringBootApplication
           public class K8sDiscoveryServerApplication {
@@ -124,6 +133,18 @@ jobs:
                   SpringApplication.run(K8sDiscoveryServerApplication.class, args);
               }
           }
+          EOF
+          cat > src/main/resources/application.yml <<'EOF'
+          server:
+            port: 8761
+          spring:
+            cloud:
+              kubernetes:
+                discovery:
+                  server:
+                    http:
+                      catalog-watcher:
+                        enabled: true
           EOF
           cat > Dockerfile <<'EOF'
           FROM eclipse-temurin:23-jdk-noble AS builder
@@ -137,8 +158,10 @@ jobs:
           COPY --from=builder app/spring-boot-loader/ ./
           COPY --from=builder app/snapshot-dependencies/ ./
           COPY --from=builder app/application/ ./
+          EXPOSE 8761
           ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
           EOF
+
       - name: Setup JDK23 + Maven Cache
         uses: actions/setup-java@v4
         with:
