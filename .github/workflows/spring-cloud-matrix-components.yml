@@ -4,20 +4,16 @@ on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
-
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
-
 permissions:
   contents: write
   packages: write
-
 env:
   UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
   GHCR_PREFIX: pungyoung
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -236,11 +232,9 @@ jobs:
                       SpringApplication.run(FunctionAdminApplication.class, args);
                   }
               }
-
     steps:
       - name: Checkout repo (per component last_release file)
         uses: actions/checkout@v5
-
       - name: Fetch latest Spring Cloud Release Train
         id: get_release
         run: |
@@ -251,13 +245,11 @@ jobs:
           echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
           echo "is_prerelease=${IS_PRE}" >> $GITHUB_OUTPUT
           echo "Raw tag: ${RAW_TAG}, cleaned version: ${LATEST_TAG}"
-
       - name: Skip pre-release / milestone
         if: steps.get_release.outputs.is_prerelease == 'true'
         run: |
           echo "Skip pre-release version: ${{ steps.get_release.outputs.latest_tag }}"
           exit 0
-
       - name: Read last built version for ${{ matrix.component.name }}
         id: read_last
         run: |
@@ -269,13 +261,11 @@ jobs:
           fi
           echo "last=${LAST}" >> $GITHUB_OUTPUT
           echo "Component: ${{ matrix.component.name }} | Last built: ${LAST}, New remote: ${{ steps.get_release.outputs.latest_tag }}"
-
       - name: Skip build if no new release for ${{ matrix.component.name }}
         if: steps.get_release.outputs.latest_tag == steps.read_last.outputs.last
         run: |
           echo "No new Spring Cloud release for ${{ matrix.component.name }}, skip build."
           exit 0
-
       - name: Generate project files for ${{ matrix.component.name }}
         run: |
           cat > pom.xml <<EOF
@@ -299,6 +289,7 @@ jobs:
               <properties>
                   <java.version>23</java.version>
                   <spring-cloud.version>${{ steps.get_release.outputs.latest_tag }}</spring-cloud.version>
+                  <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
               </properties>
           
               <dependencies>
@@ -311,6 +302,14 @@ jobs:
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
                           <version>\${spring-cloud.version}</version>
+                          <type>pom</type>
+                          <scope>import</scope>
+                      </dependency>
+                      <!-- Spring Cloud Alibaba BOM for Nacos -->
+                      <dependency>
+                          <groupId>com.alibaba.cloud</groupId>
+                          <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                          <version>\${spring-cloud-alibaba.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
@@ -382,31 +381,26 @@ jobs:
           COPY --from=builder app/application/ ./
           ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
           EOF
-
       - name: Setup JDK23 + Maven Cache
         uses: actions/setup-java@v4
         with:
           java-version: '23'
           distribution: 'temurin'
           cache: maven
-
       - name: Maven package
         run: mvn clean package -DskipTests
-
       - name: Login GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build & Push Docker Image ${{ matrix.component.image }}
         run: |
           IMAGE_TAG=${{ steps.get_release.outputs.latest_tag }}
           IMAGE_FULL="${{ env.REGISTRY }}/${{ env.GHCR_PREFIX }}/${{ matrix.component.image }}:${IMAGE_TAG}"
           docker build -t ${IMAGE_FULL} .
           docker push ${IMAGE_FULL}
-
       - name: Save built version marker ${{ matrix.component.name }}
         run: |
           LAST_FILE="last_release_${{ matrix.component.name }}.txt"
