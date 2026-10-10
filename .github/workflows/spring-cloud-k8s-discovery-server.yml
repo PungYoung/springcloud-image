@@ -158,11 +158,3 @@ jobs:
           IMAGE_TAG=${{ steps.get_release.outputs.latest_tag }}
           docker build -t ghcr.io/${{ env.IMAGE_NAME }}:${IMAGE_TAG} .
           docker push ghcr.io/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
-      - name: Save built version
-        run: |
-          echo ${{ steps.get_release.outputs.latest_tag }} > last_release.txt
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add last_release.txt
-          git commit -m "Build SpringCloud ${{ steps.get_release.outputs.latest_tag }} (K8s Discovery Server auto track)"
-          git push
