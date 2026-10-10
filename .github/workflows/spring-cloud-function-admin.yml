@@ -13,7 +13,7 @@ permissions:
 env:
   UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
-  IMAGE_NAME: pungyoung/spring-cloud-image/spring-cloud-function-admin
+  IMAGE_NAME: pungyoung/spring-cloud-function-admin
 jobs:
   build:
     runs-on: ubuntu-latest
