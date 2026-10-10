@@ -118,7 +118,7 @@ jobs:
               </build>
           </project>
           EOF
-          mkdir -p src/main/java/com/example
+          mkdir -p src/main/java/com/example src/main/resources
           cat > src/main/java/com/example/K8sDiscoveryServerApplication.java <<'EOF'
           package com.example;
 
