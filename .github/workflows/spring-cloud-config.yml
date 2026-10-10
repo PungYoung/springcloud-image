@@ -1,5 +1,5 @@
-name: Auto Build Spring Cloud Config (Track Every GA Release)
-run-name: Auto Build Spring Cloud Config
+name: Spring Cloud Config
+run-name: Spring Cloud Config
 on:
   schedule:
     - cron: '0 2 * * *'
