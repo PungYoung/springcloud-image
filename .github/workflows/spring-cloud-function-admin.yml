@@ -1,5 +1,5 @@
-name: Auto Build Spring Cloud Function Admin Server (Track Every GA Release)
-run-name: Auto Build Spring Cloud Function Admin Server
+name: Spring Cloud Function Admin Server
+run-name: Spring Cloud Function Admin Server
 on:
   schedule:
     - cron: '0 2 * * *'
