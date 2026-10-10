@@ -95,7 +95,7 @@ jobs:
                       <dependency>
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
-                          <version>\${spring-cloud.version}</version>
+                          <version>${spring-cloud.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
@@ -103,7 +103,7 @@ jobs:
                       <dependency>
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-function-dependencies</artifactId>
-                          <version>\${spring-cloud-function.version}</version>
+                          <version>${spring-cloud-function.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
