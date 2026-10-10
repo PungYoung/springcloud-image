@@ -1,5 +1,5 @@
-name: Auto Build Spring Cloud Gateway (Track Every GA Release)
-run-name: Auto Build Spring Cloud Gateway
+name: Spring Cloud Gateway
+run-name: Spring Cloud Gateway
 
 on:
   schedule:
