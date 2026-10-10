@@ -69,12 +69,12 @@ jobs:
                         SpringApplication.run(DemoApplication.class, args);
                     }
                 }
-                - name: config-server
-                  image: spring-cloud-config
-                  artifactId: sc-config-latest
-                  mainClass: ConfigServerApplication
-                  javaFile: ConfigServerApplication.java
-                  isEurekaServer: false
+          - name: config-server
+            image: spring-cloud-config
+            artifactId: sc-config-latest
+            mainClass: ConfigServerApplication
+            javaFile: ConfigServerApplication.java
+            isEurekaServer: false
             dependencies: |
                   <!-- Spring Cloud Config Server -->
                   <dependency>
@@ -115,12 +115,12 @@ jobs:
                       SpringApplication.run(ConfigServerApplication.class, args);
                   }
               }
-              - name: eureka-server
-                image: spring-cloud-eureka-server
-                artifactId: sc-eureka-server
-                mainClass: EurekaServerApplication
-                javaFile: EurekaServerApplication.java
-                isEurekaServer: true
+          - name: eureka-server
+            image: spring-cloud-eureka-server
+            artifactId: sc-eureka-server
+            mainClass: EurekaServerApplication
+            javaFile: EurekaServerApplication.java
+            isEurekaServer: true
             dependencies: |
                   <!-- Netflix Eureka Server -->
                   <dependency>
@@ -152,12 +152,12 @@ jobs:
                       SpringApplication.run(EurekaServerApplication.class, args);
                   }
               }
-              - name: k8s-discovery-server
-                image: spring-cloud-k8s-discovery-server
-                artifactId: sc-k8s-discovery-server
-                mainClass: K8sDiscoveryServerApplication
-                javaFile: K8sDiscoveryServerApplication.java
-                isEurekaServer: false
+          - name: k8s-discovery-server
+            image: spring-cloud-k8s-discovery-server
+            artifactId: sc-k8s-discovery-server
+            mainClass: K8sDiscoveryServerApplication
+            javaFile: K8sDiscoveryServerApplication.java
+            isEurekaServer: false
             dependencies: |
                   <!-- Spring Cloud K8s Discovery Server -->
                   <dependency>
@@ -194,12 +194,12 @@ jobs:
                       SpringApplication.run(K8sDiscoveryServerApplication.class, args);
                   }
               }
-              - name: function-admin
-                image: spring-cloud-function-admin
-                artifactId: sc-function-admin
-                mainClass: FunctionAdminApplication
-                javaFile: FunctionAdminApplication.java
-                isEurekaServer: false
+          - name: function-admin
+            image: spring-cloud-function-admin
+            artifactId: sc-function-admin
+            mainClass: FunctionAdminApplication
+            javaFile: FunctionAdminApplication.java
+            isEurekaServer: false
             dependencies: |
                   <!-- Spring Cloud Function Admin -->
                   <dependency>
