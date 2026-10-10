@@ -75,14 +75,14 @@ jobs:
               <properties>
                   <java.version>23</java.version>
                   <spring-cloud.version>${{ steps.get_release.outputs.latest_tag }}</spring-cloud.version>
-                  <spring-cloud-function.version>5.0.4</spring-cloud-function.version>
               </properties>
           
               <dependencies>
-                  <!-- Spring Cloud Function Admin Server -->
+                  <!-- Spring Cloud Function Admin Server 直接写版本，避开BOM问题 -->
                   <dependency>
                       <groupId>org.springframework.cloud</groupId>
                       <artifactId>spring-cloud-function-admin</artifactId>
+                      <version>5.0.4</version>
                   </dependency>
                   <dependency>
                       <groupId>org.springframework.boot</groupId>
@@ -96,14 +96,6 @@ jobs:
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
                           <version>${spring-cloud.version}</version>
-                          <type>pom</type>
-                          <scope>import</scope>
-                      </dependency>
-                      <!-- 引入Function BOM，统一管理function系列版本 -->
-                      <dependency>
-                          <groupId>org.springframework.cloud</groupId>
-                          <artifactId>spring-cloud-function-dependencies</artifactId>
-                          <version>${spring-cloud-function.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
@@ -121,7 +113,7 @@ jobs:
           </project>
           EOF
           mkdir -p src/main/java/com/example
-          cat > src/main/java/com/example/FunctionAdminApplication.java <<EOF
+          cat > src/main/java/com/example/FunctionAdminApplication.java <<'EOF'
           package com.example;
           
           import org.springframework.boot.SpringApplication;
