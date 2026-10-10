@@ -13,13 +13,15 @@ permissions:
 env:
   UPSTREAM_REPO: spring-cloud/spring-cloud-release
   REGISTRY: ghcr.io
-  IMAGE_NAME: pungyoung/spring-cloud-function-admin
+  IMAGE_NAME: pungyoung/spring-cloud-image/spring-cloud-function-admin
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo (keep last_release.txt)
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Fetch latest Spring Cloud Release Train
         id: get_release
         run: |
@@ -73,6 +75,7 @@ jobs:
               <properties>
                   <java.version>23</java.version>
                   <spring-cloud.version>${{ steps.get_release.outputs.latest_tag }}</spring-cloud.version>
+                  <spring-cloud-function.version>5.0.4</spring-cloud-function.version>
               </properties>
           
               <dependencies>
@@ -93,6 +96,14 @@ jobs:
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
                           <version>\${spring-cloud.version}</version>
+                          <type>pom</type>
+                          <scope>import</scope>
+                      </dependency>
+                      <!-- 引入Function BOM，统一管理function系列版本 -->
+                      <dependency>
+                          <groupId>org.springframework.cloud</groupId>
+                          <artifactId>spring-cloud-function-dependencies</artifactId>
+                          <version>\${spring-cloud-function.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
