@@ -52,7 +52,7 @@ jobs:
           exit 0
       - name: Generate project files
         run: |
-          cat > pom.xml <<EOF
+          cat > pom.xml <<'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <project xmlns="http://maven.apache.org/POM/4.0.0"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -92,7 +92,7 @@ jobs:
                       <dependency>
                           <groupId>org.springframework.cloud</groupId>
                           <artifactId>spring-cloud-dependencies</artifactId>
-                          <version>\${spring-cloud.version}</version>
+                          <version>${spring-cloud.version}</version>
                           <type>pom</type>
                           <scope>import</scope>
                       </dependency>
@@ -125,7 +125,7 @@ jobs:
               }
           }
           EOF
-          cat > Dockerfile <<EOF
+          cat > Dockerfile <<'EOF'
           FROM eclipse-temurin:23-jdk-noble AS builder
           WORKDIR /app
           COPY target/*.jar app.jar
